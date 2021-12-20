@@ -16,7 +16,7 @@ module.exports = {
     extensions: [ '.tsx', '.ts', '.js' ],
   },
   output: {
-    library: 'Note2D',
+    library: 'TheWorld',
     libraryTarget: 'umd',
     filename: 'index.js',
     path: path.resolve(__dirname, 'dist'),

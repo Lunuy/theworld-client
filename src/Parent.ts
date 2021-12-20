@@ -11,7 +11,7 @@ export interface Parent {
 
     getBroadcasters(): Promise<BroadcasterInfo[]>;
     getBroadcaster(id: string): Promise<BroadcasterInfo | null>;
-    broadcast(id: string, eventName: string, ...values : any): Promise<void>;
+    broadcast(id: string, message: string): Promise<void>;
 
     getUser(id?: string): Promise<User | null>;
 }

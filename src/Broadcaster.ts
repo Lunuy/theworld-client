@@ -1,6 +1,7 @@
 import EventEmitter from 'wolfy87-eventemitter';
 import { BroadcasterInfo } from './BroadcasterInfo';
 import { Parent } from './Parent';
+import { serialize } from './serialize';
 
 export interface Broadcaster extends EventEmitter {
     on(event : string | RegExp, f : Function) : this;
@@ -27,7 +28,7 @@ export class Broadcaster extends EventEmitter {
             throw new Error('The field is deleted');
 
         if(evt instanceof RegExp) return this;
-        this.parent.broadcast(this.id, evt, ...args);
+        this.parent.broadcast(this.id, serialize([evt, ...args]));
         return this;
     }
     _delete() {

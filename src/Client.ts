@@ -1,11 +1,12 @@
 
-import Penpal, { Connection } from 'penpal';
+import { connectToParent, Connection } from 'penpal';
 import EventEmitter from 'wolfy87-eventemitter';
 import { Broadcaster } from './Broadcaster';
 import { BroadcasterInfo } from './BroadcasterInfo';
 import Field from './Field';
 import { FieldInfo } from './FieldInfo';
 import { Parent } from './Parent';
+import { deserialize } from './serialize';
 import { User } from './User';
 
 
@@ -40,7 +41,7 @@ export class Client extends EventEmitter {
     async connect() {
         if(this.connectingPromise) return await this.connectingPromise;
 
-        this.connection = Penpal.connectToParent({
+        this.connection = connectToParent({
             methods: {
                 getPorts() {
                     return {
@@ -48,13 +49,27 @@ export class Client extends EventEmitter {
                         fields: [...self.fieldPorts]
                     };
                 },
-                broadcast(id: string, userId: string, ...values: any) {
-                    self.getBroadcaster(id);
+                broadcast(id: string, userId: string, message: string) {
+                    const broadcaster = self.broadcasterMap.get(id);
+                    if(broadcaster) {
+                        try {
+                            const [evt, ...values] = deserialize(message);
+                            if(typeof evt === 'string')
+                                broadcaster._emit(evt, userId, ...values);
+                        } catch(e) {
+
+                        }
+                    }
                 },
                 setFieldValue(id: string, userId: string, value: string) {
                     const field = self.fieldMap.get(id);
-                    if(field)
-                        field._set(value, userId);
+                    if(field) {
+                        try {
+                            field._set(deserialize(value), userId);
+                        } catch(e) {
+
+                        }
+                    }
                 },
                 createField(field: FieldInfo) {
                     self.emit('createField', field);
@@ -85,11 +100,15 @@ export class Client extends EventEmitter {
             this.parent = await this.connection!.promise as any;
             this.user = await this.parent.getUser();
         })();
+
+        await this.connectingPromise;
     }
 
-    async getField<V>(id: string, fallbackValue: V) {
+    async getField<V>(id: string, fallbackValue: V): Promise<Field<V>> {
+        await this.connectingPromise;
+
         if(this.fieldMap.get(id))
-            return this.fieldMap.get(id);
+            return this.fieldMap.get(id)!;
         
         let fieldInfo = await this.parent.getField(id);
         if(!fieldInfo)
@@ -100,6 +119,8 @@ export class Client extends EventEmitter {
         return field;
     }
     async getFields<V>(fallbackValueCallback: (id: string) => V) {
+        await this.connectingPromise;
+
         const fieldInfos = await this.parent.getFields();
 
         const fields = fieldInfos.map(fieldInfo => {
@@ -114,6 +135,8 @@ export class Client extends EventEmitter {
     }
 
     async getBroadcaster(id: string) {
+        await this.connectingPromise;
+
         if(this.broadcasterMap.get(id))
             return this.broadcasterMap.get(id);
         
@@ -126,6 +149,8 @@ export class Client extends EventEmitter {
         return broadcaster;
     }
     async getBroadcasters() {
+        await this.connectingPromise;
+
         const broadcasterInfos = await this.parent.getBroadcasters();
 
         const broadcasters = broadcasterInfos.map(broadcasterInfo => {
