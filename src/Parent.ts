@@ -1,5 +1,6 @@
 import { BroadcasterInfo } from "./BroadcasterInfo";
 import { FieldInfo } from "./FieldInfo";
+import { PluginInfo } from "./PluginInfo";
 import { User } from "./User";
 
 
@@ -12,6 +13,9 @@ export interface Parent {
     getBroadcasters(): Promise<BroadcasterInfo[]>;
     getBroadcaster(id: string): Promise<BroadcasterInfo | null>;
     broadcast(id: string, message: string): Promise<void>;
+    
+    getPlugin(id: string): Promise<PluginInfo>
+    sendPluginMessage(id: string, message: string): Promise<void>;
 
     getUser(id?: string): Promise<User | null>;
 }

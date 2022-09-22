@@ -8,12 +8,15 @@ import { FieldInfo } from './FieldInfo';
 import { Parent } from './Parent';
 import { deserialize } from './serialize';
 import { User } from './User';
-
+import { Plugin } from './Plugin';
+import { PluginInfo } from './PluginInfo';
 
 
 export interface Client extends EventEmitter {
     on(event : string | RegExp, f : Function) : this
     on(event : 'createField', f : (field: FieldInfo) => void) : this
+    on(event : 'createBroadcaster', f : (broadcaster: BroadcasterInfo) => void) : this
+    on(event : 'createPlugin', f : (plugin: PluginInfo) => void) : this
     // on(event : "setUserField", f : (fieldId : string, value : ResField["value"]) => void) : this
 }
 
@@ -24,9 +27,11 @@ export class Client extends EventEmitter {
 
     private broadcasterMap: Map<string, Broadcaster>;
     private fieldMap: Map<string, Field<any>>;
+    private pluginMap: Map<string, Plugin>;
 
     private broadcasterPorts: Set<string>;
     private fieldPorts: Set<string>;
+    private pluginPorts: {[K: string]: { code: string }}
     private user!: User| null;
 
     constructor() {
@@ -34,8 +39,10 @@ export class Client extends EventEmitter {
 
         this.broadcasterMap = new Map();
         this.fieldMap = new Map();
+        this.pluginMap = new Map();
         this.broadcasterPorts = new Set();
         this.fieldPorts = new Set();
+        this.pluginPorts = {};
     }
 
     async connect() {
@@ -46,7 +53,8 @@ export class Client extends EventEmitter {
                 getPorts() {
                     return {
                         broadcasters: [...self.broadcasterPorts],
-                        fields: [...self.fieldPorts]
+                        fields: [...self.fieldPorts],
+                        plugins: self.pluginPorts
                     };
                 },
                 broadcast(id: string, userId: string, message: string) {
@@ -66,6 +74,18 @@ export class Client extends EventEmitter {
                     if(field) {
                         try {
                             field._set(deserialize(value), userId);
+                        } catch(e) {
+
+                        }
+                    }
+                },
+                sendPluginMessage(id: string, message: string) {
+                    const plugin = self.pluginMap.get(id);
+                    if(plugin) {
+                        try {
+                            const [evt, ...values] = deserialize(message);
+                            if(typeof evt === 'string')
+                                plugin._emit(evt, ...values);
                         } catch(e) {
 
                         }
@@ -91,6 +111,16 @@ export class Client extends EventEmitter {
                         self.broadcasterMap.delete(id);
                     }
                 },
+                createPlugin(plugin: PluginInfo) {
+                    self.emit('createPlugin', plugin);
+                },
+                deletePlugin(id: string) {
+                    const plugin = self.pluginMap.get(id);
+                    if(plugin) {
+                        plugin._delete();
+                        self.pluginMap.delete(id);
+                    }
+                }
             }
         });
 
@@ -163,6 +193,21 @@ export class Client extends EventEmitter {
 
         return broadcasters;
     }
+    
+    async getPlugin(id: string) {
+        await this.connectingPromise;
+
+        if(this.pluginMap.get(id))
+            return this.pluginMap.get(id);
+        
+        let pluginInfo = await this.parent.getPlugin(id);
+        if(!pluginInfo)
+            pluginInfo = await new Promise(solve => this.once('createPlugin', solve));
+        
+        const plugin = new Plugin(pluginInfo!, this.parent);
+        this.pluginMap.set(id, plugin);
+        return plugin;
+    }
 
     addBroadcasterPort(id: string) {
         this.broadcasterPorts.add(id);
@@ -175,6 +220,12 @@ export class Client extends EventEmitter {
     }
     removeFieldPort(id: string) {
         this.fieldPorts.delete(id);
+    }
+    addPluginPort(id: string, code: string) {
+        this.pluginPorts[id] = { code };
+    }
+    removePluginPort(id: string) {
+        delete this.pluginPorts[id];
     }
 
     getUser() {
