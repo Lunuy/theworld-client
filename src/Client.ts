@@ -168,7 +168,7 @@ export class Client extends EventEmitter {
         await this.connectingPromise;
 
         if(this.broadcasterMap.get(id))
-            return this.broadcasterMap.get(id);
+            return this.broadcasterMap.get(id)!;
         
         let broadcasterInfo = await this.parent.getBroadcaster(id);
         if(!broadcasterInfo)
@@ -198,7 +198,7 @@ export class Client extends EventEmitter {
         await this.connectingPromise;
 
         if(this.pluginMap.get(id))
-            return this.pluginMap.get(id);
+            return this.pluginMap.get(id)!;
         
         let pluginInfo = await this.parent.getPlugin(id);
         if(!pluginInfo)
