@@ -31,7 +31,7 @@ export class Client extends EventEmitter {
 
     private broadcasterPorts: Set<string>;
     private fieldPorts: Set<string>;
-    private pluginPorts: {[K: string]: { code: string }}
+    private pluginPorts: Map<string, { code: string, data: string }>
     private user!: User| null;
 
     constructor() {
@@ -42,7 +42,7 @@ export class Client extends EventEmitter {
         this.pluginMap = new Map();
         this.broadcasterPorts = new Set();
         this.fieldPorts = new Set();
-        this.pluginPorts = {};
+        this.pluginPorts = new Map();
     }
 
     async connect() {
@@ -54,7 +54,7 @@ export class Client extends EventEmitter {
                     return {
                         broadcasters: [...self.broadcasterPorts],
                         fields: [...self.fieldPorts],
-                        plugins: self.pluginPorts
+                        plugins: [...self.pluginPorts.entries()].map(([name, { code, data }]) => ({ name, code, data }))
                     };
                 },
                 broadcast(id: string, userId: string, message: string) {
@@ -221,11 +221,11 @@ export class Client extends EventEmitter {
     removeFieldPort(id: string) {
         this.fieldPorts.delete(id);
     }
-    addPluginPort(id: string, code: string) {
-        this.pluginPorts[id] = { code };
+    addPluginPort(id: string, code: string, data: string) {
+        this.pluginPorts.set(id, { code, data });
     }
     removePluginPort(id: string) {
-        delete this.pluginPorts[id];
+        this.pluginPorts.delete(id);
     }
 
     getUser() {
