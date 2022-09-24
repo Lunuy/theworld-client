@@ -1,6 +1,6 @@
 {
   "name": "theworld-client",
-  "version": "1.0.7",
+  "version": "1.1.0",
   "description": "TheWorld Client",
   "main": "./dist/index.js",
   "dependencies": {

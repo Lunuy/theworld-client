@@ -38,10 +38,4 @@ export class Plugin extends EventEmitter {
         this.deleted = true;
         this.emit('delete');
     }
-    sendPluginMessage(message: string) {
-        if (!this.parent)
-            throw new Error('Plugin is deleted');
-        
-        this.parent.sendPluginMessage(this.id, message);
-    }
 }
