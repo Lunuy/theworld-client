@@ -1,3 +1,4 @@
+/// <reference path="../types/plugin/declarations.d.ts" />
 
 import { Broadcaster } from './Broadcaster';
 import { Client } from './Client';
