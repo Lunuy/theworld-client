@@ -6,7 +6,7 @@ import { BroadcasterInfo } from './BroadcasterInfo';
 import Field from './Field';
 import { FieldInfo } from './FieldInfo';
 import { Parent } from './Parent';
-import { deserialize } from './serialize';
+import { deserialize, serialize } from './serialize';
 import { User } from './User';
 import { Plugin } from './Plugin';
 import { PluginInfo } from './PluginInfo';
@@ -31,7 +31,7 @@ export class Client extends EventEmitter {
 
     private broadcasterPorts: Set<string>;
     private fieldPorts: Set<string>;
-    private pluginPorts: Map<string, { code: string, data: string }>
+    private pluginPorts: Map<string, { code: string, data: any }>
     private user!: User| null;
 
     constructor() {
@@ -54,7 +54,7 @@ export class Client extends EventEmitter {
                     return {
                         broadcasters: [...self.broadcasterPorts],
                         fields: [...self.fieldPorts],
-                        plugins: [...self.pluginPorts.entries()].map(([name, { code, data }]) => ({ name, code, data }))
+                        plugins: [...self.pluginPorts.entries()].map(([name, { code, data }]) => ({ name, code, data: serialize(data) }))
                     };
                 },
                 broadcast(id: string, userId: string, message: string) {
@@ -221,7 +221,7 @@ export class Client extends EventEmitter {
     removeFieldPort(id: string) {
         this.fieldPorts.delete(id);
     }
-    addPluginPort(id: string, code: string, data: string) {
+    addPluginPort(id: string, code: string, data: any) {
         this.pluginPorts.set(id, { code, data });
     }
     removePluginPort(id: string) {
