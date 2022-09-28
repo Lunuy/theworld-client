@@ -9,7 +9,7 @@ declare global {
         deleteTile(x: number, y: number, isEffect: boolean): void;
         setCollider(x: number, y: number, isBlocked: boolean): void;
         saveData(data: Data): void;
-        movePlayer(userId: string, x: number, y: number): void;
+        requestMovePlayer(userId: string, x: number, y: number): void;
         teleportPlayer(userId: string, x: number, y: number): void;
     
         onLoad(data: Data): void;
