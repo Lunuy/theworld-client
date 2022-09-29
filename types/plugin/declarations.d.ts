@@ -1,5 +1,21 @@
 
-export {}
+export interface IframeInfo {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+export interface GlobalPluginEnvironmentInfo {
+    isLocal: false;
+}
+
+export interface LocalPluginEnvironmentInfo {
+    isLocal: true;
+    iframe: IframeInfo;
+}
+
+export type PluginEnvironmentInfo = GlobalPluginEnvironmentInfo | LocalPluginEnvironmentInfo;
 
 declare global {
     class BasePlugin<Data = any> {
@@ -12,7 +28,7 @@ declare global {
         requestMovePlayer(userId: string, x: number, y: number): void;
         teleportPlayer(userId: string, x: number, y: number): void;
     
-        onLoad(data: Data): void;
+        onLoad(data: Data, environmentInfo: PluginEnvironmentInfo): void;
         onUnload(): void;
         onPlayerJoin(userId: string): void;
         onPlayerLeave(userId: string): void;
